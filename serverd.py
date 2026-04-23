@@ -1,7 +1,7 @@
 import socket
 import selectors
 import sys
-
+# import logging we prolly need it, but not sure we to put it tho
 from session import sessions
 
 sel = selectors.DefaultSelector()
