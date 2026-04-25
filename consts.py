@@ -14,6 +14,7 @@ STATUS_CODE = {
     500: "500 Internal Server Error",
     503: "503 Service Unavailable",
 }
+
 # https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types/Common_types
 MIME_TYPES = {
     ".html": "text/html",

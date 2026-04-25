@@ -1,8 +1,7 @@
 import socket
 import selectors
-import sys
-# import logging we prolly need it, but not sure we to put it tho
-from session import sessions
+from typing import Dict
+from session import  HTTPSession, sessions
 
 sel = selectors.DefaultSelector()
 
@@ -16,53 +15,52 @@ class Connection:
     def read(self):
         try:
             message = self.sock.recv(1024)
-            
-            # could be faster mby? 
-            #self.sock.recv_into
             return message
+        
         except Exception: 
             self.sock.close()
-            
-            return
-        
         except KeyboardInterrupt:
             sel.unregister(self.sock)
             self.sock.close()
-        
         except BrokenPipeError:
             sel.unregister(self.sock)
             self.sock.close()
+    
+    def close_conn(self):
+        print("closing connection")
+        sel.unregister(self.sock)
+        self.sock.close()
+    
+    def send(self, data = "HTTP/1.1 200 OK\r\nConnection : close\r\n\r\n"):
 
-def read(conn : socket.socket, mask):
-    
-    try:
-        message = conn.recv(1024)
-        conn.recv_into
-        return message
-    except Exception: 
-        conn.close()
-        
-        return
-    
-    except KeyboardInterrupt:
-        sel.unregister(conn)
-        conn.close()
-    
-    except BrokenPipeError:
-        sel.unregister(conn)
-        conn.close()
+        try:
+            self.sock.send(data.encode())
+        except BrokenPipeError:
+            sel.unregister(self.sock)
+            self.sock.close()
+        except KeyboardInterrupt:
+            sel.unregister(self.sock)
+            self.sock.close()
+        except Exception: 
+            self.sock.close()
+
+        print("responded to client")
+
             
-def accept(serverSocket : socket.socket, mask):
+def accept(serverSocket : socket.socket):
 
-    conn, addr = serverSocket.accept()    
-    conn.setblocking(False)
+    clientSocket, addr = serverSocket.accept()    
+    clientSocket.setblocking(False)
     
-    # dont like it, needs more thouht
-    sel.register(conn, selectors.EVENT_READ, "read")
+    conn = Connection(clientSocket)
+
+    sessions[clientSocket] = HTTPSession(conn)
+
+    sel.register(clientSocket, selectors.EVENT_READ, "read")
 
 class SelectServer:
     HOST =  "127.0.0.1"
-    PORT = 65433
+    PORT = 65432
         
     def __init__(self):
         self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
@@ -71,25 +69,31 @@ class SelectServer:
 
     def run_server(self):
         self.serverSocket.listen(100)
-        sel.register(self.serverSocket, selectors.EVENT_READ, accept)
+        sel.register(self.serverSocket, selectors.EVENT_READ, "accept")
 
+        print("server started")
         ## loop has to handle read,accept events
         try:
+            print("start event loop")
             while True:
                 events = sel.select()
                 for key, mask in events:
                     
-                    # should work? ugly
                     if key.data == "read":
-                        #xd
+                        print("read data")
+
                         sessions[key.fileobj].read()
+
                     elif key.data == "accept":
-                        accept()
+                        print("accept connetion")
+                        accept(key.fileobj)
                 
         finally:
+            print("close server")
             self.serverSocket.close()
                     
     def stop_server(self):
+        print("close server")
         self.serverSocket.close()
 
 if __name__ == "__main__":

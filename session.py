@@ -1,84 +1,108 @@
-from serverd import Connection
-
-sessions = {}
-
-def create_session(conn : Connection):
-    sessions[conn] = HTTPSession(conn)
+#from serverd import Connection
+from parser import Request, RequestHeader, RequestLine, parse_header, parse_request_line
+import socket
+from typing import Tuple
 
 class HTTPSession:
-    
     def __init__(self, conn):
-        self.conn : Connection = conn
-        self.read_buffer = None
-        self.write_buffer = None
-    
-    def send_response():
-        pass
-    
-    def read(self):
-        new_data = self.conn.read()
-        # ?
-        get_request(new_data)
+        self.conn = conn
+        self.read_buffer : str = ""
+        self.write_buffer : str = ""
+        self.request_line : RequestLine = "" 
+        self.request_header : RequestHeader = ""
+        self.request_body : str = ""
+        self.content_length : int = 0
+        self.phase : int = 0
+        self.requests : list = []
 
-def get_request() -> Request:
+    def send_response(self, response):
+        self.conn.send()
     
-    request_line_data = ''
-    header_data = ''
-    body_data = ''
-    
-    # this looks ugly, make simpler
-    while True:
-        data = ''
+    def read(self) -> None:
+        new_data = self.conn.read().decode()
+        self.get_requests(new_data)
         
+        for request in self.requests:
+            print(request)
+
+        for request in self.requests:
+            self.handle_request(request)
+            print("request served")
+        
+        self.close_session()
+
+    def handle_request(self, request):
+        #print(request)
+        response = "HTTP/1.1 200 OK"
+        self.send_response(response=response)
+    
+    def close_session(self):
+        self.conn.close_conn()
+        sessions.pop(self.conn.sock)
+        print("closing session")
+
+    def reset_request(self):
+        self.read_buffer : str = ""
+        self.request_line : RequestLine = "" 
+        self.request_header : RequestHeader = ""
+        self.request_body : str = ""
+        self.content_length : int = 0
+        self.phase : int = 0
+
+    def get_requests(self, new_data) -> bool:
+        
+        self.read_buffer += new_data
+
         while True:
-            new_data : str = read().decode()
+            if not self.request_line:
+                is_ready = self.line()
+                if not is_ready:
+                    return
+                
+            if not self.request_header:
+                is_ready = self.header()
+                if not is_ready:
+                    return 
             
-            if '\r\n' in new_data:
-                data += new_data
-                request_line_data, data = data.split('\r\n')[0], data.split('\r\n')[1]
-            
-                request_line : RequestLine = parse_request_line(request_line_data)
-                break
-            else:
-                data += new_data
+            if not self.request_body:
+                is_ready = self.parse_body()
+                if not is_ready:
+                    return 
+                else:
+                    request = Request(line = self.request_line, header = self.request_header, body = self.request_body)
+                    self.requests.append(request)
+                    self.reset_request()
 
-        while True:
-            new_data : str = read().decode()
-            
-            if '\r\n' in new_data:
-                data += new_data
-                request_line_data, data = data.split('\r\n')[0], data.split('\r\n')[1]
-            
-                request_header = RequestHeader(header_data)
-                break
-            else:
-                data += new_data
+    def parse_body(self):
+        if self.content_length == 0:
+            return True
+        elif self.content_length <= len(self.read_buffer): 
+            self.request_body, self.read_buffer = self.read_buffer[:self.content_length], self.read_buffer[self.content_length:]
+            return True
+        else: 
+            return False
 
-        while True:
-            new_data : str = read().decode()
-            
-            if '\r\n\r\n' in new_data:
-                data += new_data
-                request_line_data, data = data.split('\r\n')[0], data.split('\r\n')[1]
-            
-                request_header = RequestHeader(header_data)
-                break
-            else:
-                data += new_data
+    # temp name, cant use parse_line duo to name collision
+    def line(self):
+        if "\r\n" in self.read_buffer:
+            data_to_parse, self.read_buffer = self.read_buffer.split('\r\n', maxsplit=1)[0], self.read_buffer.split('\r\n', maxsplit=1)[1]
+            self.request_line = parse_request_line(data_to_parse)
+            return True
 
-        return Request(line = request_line, header = request_header, body = request_body)
-
-
-# mental draft
-# def session():
-    
-#     while True:
+    # temp name, cant use parse_line duo to name collision
+    def header(self):
+        if self.read_buffer[0:2] == "\r\n":
+            self.content_length == 0
+            return True
         
-#         request = get_request()
-        
-#         response = handle_request(request)
-        
-#         send_response(response)
+        elif "\r\n\r\n" in self.read_buffer:
+            data_to_parse, self.read_buffer = self.read_buffer.split('\r\n\r\n', maxsplit=1)[0], self.read_buffer.split('\r\n\r\n', maxsplit=1)[1]
+            self.request_header = parse_header(data_to_parse)
+            return True
+         
+        return False
+
+sessions = {}
         
         
         
