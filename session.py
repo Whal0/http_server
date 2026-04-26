@@ -92,7 +92,7 @@ class HTTPSession:
     # temp name, cant use parse_line duo to name collision
     def header(self):
         if self.read_buffer[0:2] == "\r\n":
-            self.content_length == 0
+            self.content_length = 0
             return True
         
         elif "\r\n\r\n" in self.read_buffer:
