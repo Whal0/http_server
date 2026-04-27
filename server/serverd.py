@@ -1,7 +1,7 @@
 import socket
 import selectors
 from typing import Dict
-from session import  HTTPSession, sessions
+from server.session import  HTTPSession, sessions
 
 sel = selectors.DefaultSelector()
 
