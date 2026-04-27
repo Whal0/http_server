@@ -1,5 +1,5 @@
 #from serverd import Connection
-from parser import Request, RequestHeader, RequestLine, parse_header, parse_request_line
+from server.parser import Request, RequestHeader, RequestLine, parse_header, parse_request_line
 import socket
 from typing import Tuple
 
@@ -8,12 +8,12 @@ class HTTPSession:
         self.conn = conn
         self.read_buffer : str = ""
         self.write_buffer : str = ""
-        self.request_line : RequestLine = "" 
-        self.request_header : RequestHeader = ""
+        self.request_line : RequestLine = None
+        self.request_header : RequestHeader = None 
         self.request_body : str = ""
         self.content_length : int = 0
         self.phase : int = 0
-        self.requests : list = []
+        self.requests : list[Request] = []
 
     def send_response(self, response):
         self.conn.send()
@@ -42,12 +42,10 @@ class HTTPSession:
         print("closing session")
 
     def reset_request(self):
-        self.read_buffer : str = ""
-        self.request_line : RequestLine = "" 
-        self.request_header : RequestHeader = ""
+        self.request_line : RequestLine = None 
+        self.request_header : RequestHeader = None 
         self.request_body : str = ""
         self.content_length : int = 0
-        self.phase : int = 0
 
     def get_requests(self, new_data) -> bool:
         
@@ -92,12 +90,24 @@ class HTTPSession:
     # temp name, cant use parse_line duo to name collision
     def header(self):
         if self.read_buffer[0:2] == "\r\n":
-            self.content_length == 0
-            return True
+            self.read_buffer = self.read_buffer[2:]
+
+            request = Request(line = self.request_line, header = self.request_header, body = self.request_body)
+            self.requests.append(request)
+            self.reset_request()
+            self.content_length = 0
+
+            if self.read_buffer:
+                return True
+            else:
+                return False
         
         elif "\r\n\r\n" in self.read_buffer:
             data_to_parse, self.read_buffer = self.read_buffer.split('\r\n\r\n', maxsplit=1)[0], self.read_buffer.split('\r\n\r\n', maxsplit=1)[1]
             self.request_header = parse_header(data_to_parse)
+            
+            if "content-length" in self.request_header.headers.keys():
+                self.content_length = int(self.request_header.headers["content-length"])
             return True
          
         return False
