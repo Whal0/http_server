@@ -75,7 +75,15 @@ class HTTPSession:
                 else:
                     return
 
-            body, remaining = extract_body(self.read_buffer, self.content_length)
+self.request_body, self.read_buffer = extract_body(self.read_buffer, self.content_length)
+
+if self.request_body is not None:
+    request = Request(line=self.request_line, header=self.request_header, body=self.request_body)
+    self.requests.append(request)
+    self.reset_request()
+
+elif self.request_body is None and remaining != "":
+    return 
             
             if body is not None:
                 self.request_body = body
