@@ -75,8 +75,8 @@ class HTTPSession:
                 else:
                     return
 
-
             body, remaining = extract_body(self.read_buffer, self.content_length)
+            
             if body is not None:
                 self.request_body = body
                 self.read_buffer = remaining
@@ -84,6 +84,9 @@ class HTTPSession:
                 request = Request(line=self.request_line, header=self.request_header, body=self.request_body)
                 self.requests.append(request)
                 self.reset_request()
+
+            elif body is None and remaining != "":
+                return 
 
 sessions = {}
         
