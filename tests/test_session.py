@@ -295,3 +295,45 @@ def test_get_requests_full_and_partial_request():
     assert session.requests[0].body == expected_body_1
     assert session.requests[0] == expected_request_1
     assert session.content_length == 0
+
+def test_get_requests_partial_body():
+
+    mock_conn = MagicMock()
+    session = HTTPSession(conn=mock_conn)
+
+    request = ("GET https://www.grydyk.com/main.py HTTP/1.1\r\n"
+                "Connection : close\r\n"
+                "Accept : */*\r\n"
+                "Accept-Language : dn\r\n"
+                "Content-length : 5\r\n\r\n"
+                "AAA")
+    
+    expected_line = RequestLine(
+        method="GET",
+        url="https://www.grydyk.com/main.py",
+        version="HTTP/1.1"
+    )
+
+    expected_header = RequestHeader(
+        headers={
+                "connection" : "close",
+                "accept" : "*/*",
+                "accept-language" : "dn",
+                "content-length" : "5"
+        }
+    )
+
+    expected_body = ""
+
+    expected_request = Request(line=expected_line,
+                               header=expected_header,
+                               body=expected_body)
+
+    session.get_requests(request)
+
+    assert len(session.requests) == 0
+    assert session.read_buffer == "AAA"
+    assert session.request_line == expected_line
+    assert session.request_header == expected_header
+    assert session.request_body == ""
+    assert session.content_length == 5
