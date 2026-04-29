@@ -1,13 +1,14 @@
 import unittest
 from server.exceptions import InvalidRequestException, VersionNotSupportedException
-from server.parser import RequestHeader, RequestLine, parse_request_line, parse_header
+from server.parser import RequestHeader, RequestLine, parse_request_line, parse_header, extract_request_line, extract_headers, extract_body
+
 
 class TestParser(unittest.TestCase):
 
     def test_valid_request_line(self):
         line_str = "GET /index.html HTTP/1.1"
         result = parse_request_line(line_str)
-        
+
         self.assertIsInstance(result, RequestLine)
         self.assertEqual(result.method, "GET")
         self.assertEqual(result.url, "/index.html")
@@ -71,7 +72,57 @@ class TestParser(unittest.TestCase):
         result = parse_request_line(request_line)
         self.assertEqual(result.method, "GET")
 
+#################################################
+#EXTRACTS
+    def test_extract_request_line_complete(self):
+        buffer = "GET /index.html HTTP/1.1\r\nHost: localhost"
+        line, remaining = extract_request_line(buffer)
+        self.assertIsNotNone(line)
+        self.assertEqual(line.method, "GET")
+        self.assertEqual(remaining, "Host: localhost")
 
+    def test_extract_request_line_incomplete(self):
+        buffer = "GET /index.html HTTP/1.1"
+        line, remaining = extract_request_line(buffer)
+        self.assertIsNone(line)
+        self.assertEqual(remaining, buffer)
+
+    def test_extract_headers_complete(self):
+        buffer = "Host: localhost\r\nContent-Length: 10\r\n\r\nBodyContent"
+        header, remaining, length = extract_headers(buffer)
+        self.assertIsNotNone(header)
+        self.assertEqual(header.headers["host"], "localhost")
+        self.assertEqual(length, 10)
+        self.assertEqual(remaining, "BodyContent")
+
+    def test_extract_headers_incomplete(self):
+        buffer = "Host: localhost\r\nContent-Length: 10\r\n"
+        header, remaining, length = extract_headers(buffer)
+        self.assertIsNone(header)
+        self.assertEqual(remaining, buffer)
+
+    def test_extract_headers_no_headers(self):
+        buffer = "\r\nBody"
+        header, remaining, length = extract_headers(buffer)
+        self.assertIsNone(header)
+        self.assertEqual(remaining, "Body")
+
+    def test_extract_headers_invalid_content_length(self):
+        buffer = "Content-Length: abc\r\n\r\n"
+        header, remaining, length = extract_headers(buffer)
+        self.assertEqual(length, 0)
+
+    def test_extract_body_complete(self):
+        buffer = "0123456789Remaining"
+        body, remaining = extract_body(buffer, 10)
+        self.assertEqual(body, "0123456789")
+        self.assertEqual(remaining, "Remaining")
+
+    def test_extract_body_incomplete(self):
+        buffer = "01234"
+        body, remaining = extract_body(buffer, 10)
+        self.assertIsNone(body)
+        self.assertEqual(remaining, buffer)
 
 if __name__ == "__main__":
     unittest.main()
