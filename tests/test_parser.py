@@ -1,6 +1,6 @@
 import unittest
 from server.exceptions import InvalidRequestException, VersionNotSupportedException
-from parser import RequestHeader, RequestLine, parse_request_line, parse_header
+from server.parser import RequestHeader, RequestLine, parse_request_line, parse_header
 
 class TestParser(unittest.TestCase):
 

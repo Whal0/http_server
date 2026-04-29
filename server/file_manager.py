@@ -14,7 +14,7 @@ class FileManager:
         full_path = self._sanitize(path)
         full_path = os.path.abspath(os.path.join(self.base_dir, full_path))
         
-        if not path.startswith(self.base_dir):
+        if not full_path.startswith(self.base_dir):
             raise PermissionError('backward traversal not allowed')
         
         return full_path
@@ -35,13 +35,8 @@ class FileManager:
     def get_file(self, path: str, if_modified_since: datetime = None) -> Response: # not sure on the return type
         full_path = self._get_path(path)
         
-        if not self.path_exist(full_path):
+        if not os.path.exists(full_path):
             return self._handle_error(404)
-        
-        file_size, file_mtime = self._get_file_metadata
-        
-        if if_modified_since is not None and if_modified_since >= file_mtime:
-            return self._handle_error(304)
 
         if os.path.isdir(full_path):
             
@@ -54,6 +49,11 @@ class FileManager:
             if os.path.isdir(full_path):
                 return self._handle_error(403) # moze 404?
 
+        file_size, file_mtime = self._get_file_metadata(full_path)
+        
+        if if_modified_since is not None and if_modified_since >= file_mtime:
+            return self._handle_error(304)
+
         data = self.read_file(full_path, file_size) # dunno if we need size where
 
         # zawsze zwraca z wyjątkiek metoda HEAD
@@ -62,7 +62,7 @@ class FileManager:
     def _get_file_metadata(self, path: str) -> int:
         try:
             stats = os.stat(path)
-            return stats.st_size, stats.st_mtime
+            return (stats.st_size, stats.st_mtime)
         except OSError as e:
             #log tutaj
             return None
@@ -79,7 +79,7 @@ class FileManager:
 
     def _handle_error(self, error_code:int) -> Response: #TODO
         
-        return None
+        return error_code
 
     def get_last_modified(self, path:str):
         
@@ -90,7 +90,7 @@ class FileManager:
 
         try:
             mtime = os.path.getmtime(full_path)
-            dt = datetime.fromtimestamp(mtime)
+            dt = datetime.datetime.fromtimestamp(mtime)
             
             # Http header format section 3.3.1
             return dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
