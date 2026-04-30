@@ -1,5 +1,5 @@
 #from serverd import Connection
-from server.parser import Request, RequestHeader, RequestLine, parse_header, parse_request_line
+from server.parser import Request, RequestHeader, RequestLine, extract_request_line, extract_headers, extract_body
 import socket
 from typing import Tuple
 
@@ -48,69 +48,53 @@ class HTTPSession:
         self.content_length : int = 0
 
     def get_requests(self, new_data) -> bool:
-        
         self.read_buffer += new_data
 
         while True:
-            if not self.request_line:
-                is_ready = self.line()
-                if not is_ready:
+            if self.request_line is None:
+                self.request_line, self.read_buffer = extract_request_line(self.read_buffer)
+                if self.request_line is None:
                     return
+
+            if self.request_header is None:
+                header_obj, remaining, content_length = extract_headers(self.read_buffer)
+                # reszte nie musimy bo zawsze jeśli obj jest reszta też
+                if header_obj is not None:
+                    self.request_header = header_obj
+                    self.read_buffer = remaining
+                    self.content_length = content_length
                 
-            if not self.request_header:
-                is_ready = self.header()
-                if not is_ready:
-                    return 
-            
-            if not self.request_body:
-                is_ready = self.parse_body()
-                if not is_ready:
-                    return 
-                else:
-                    request = Request(line = self.request_line, header = self.request_header, body = self.request_body)
+                elif remaining == '':
+                    self.read_buffer = remaining
+                    
+                    request = Request(line=self.request_line, header=self.request_header, body="")
                     self.requests.append(request)
                     self.reset_request()
+                    return
+                
+                else:
+                    return
 
-    def parse_body(self):
-        if self.content_length == 0:
-            return True
-        elif self.content_length <= len(self.read_buffer): 
-            self.request_body, self.read_buffer = self.read_buffer[:self.content_length], self.read_buffer[self.content_length:]
-            return True
-        else: 
-            return False
+self.request_body, self.read_buffer = extract_body(self.read_buffer, self.content_length)
 
-    # temp name, cant use parse_line duo to name collision
-    def line(self):
-        if "\r\n" in self.read_buffer:
-            data_to_parse, self.read_buffer = self.read_buffer.split('\r\n', maxsplit=1)[0], self.read_buffer.split('\r\n', maxsplit=1)[1]
-            self.request_line = parse_request_line(data_to_parse)
-            return True
+if self.request_body is not None:
+    request = Request(line=self.request_line, header=self.request_header, body=self.request_body)
+    self.requests.append(request)
+    self.reset_request()
 
-    # temp name, cant use parse_line duo to name collision
-    def header(self):
-        if self.read_buffer[0:2] == "\r\n":
-            self.read_buffer = self.read_buffer[2:]
-
-            request = Request(line = self.request_line, header = self.request_header, body = self.request_body)
-            self.requests.append(request)
-            self.reset_request()
-            self.content_length = 0
-
-            if self.read_buffer:
-                return True
-            else:
-                return False
-        
-        elif "\r\n\r\n" in self.read_buffer:
-            data_to_parse, self.read_buffer = self.read_buffer.split('\r\n\r\n', maxsplit=1)[0], self.read_buffer.split('\r\n\r\n', maxsplit=1)[1]
-            self.request_header = parse_header(data_to_parse)
+elif self.request_body is None and remaining != "":
+    return 
             
-            if "content-length" in self.request_header.headers.keys():
-                self.content_length = int(self.request_header.headers["content-length"])
-            return True
-         
-        return False
+            if body is not None:
+                self.request_body = body
+                self.read_buffer = remaining
+            
+                request = Request(line=self.request_line, header=self.request_header, body=self.request_body)
+                self.requests.append(request)
+                self.reset_request()
+
+            elif body is None and remaining != "":
+                return 
 
 sessions = {}
         
