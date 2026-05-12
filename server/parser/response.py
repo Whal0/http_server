@@ -11,6 +11,6 @@ class ResponseLine(Line):
         self.status_code = status_code
         self.phrase = STATUS_CODE[int(status_code)]
 
-class Request(Message):
+class Response(Message):
     def __init__(self, line : ResponseLine, header : ResponseHeader, body : Line):
         super().__init__(line, header, body)
