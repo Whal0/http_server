@@ -4,7 +4,7 @@ import socket
 from typing import Tuple
 
 class HTTPSession:
-    def __init__(self, conn):
+    def __init__(self, conn, request_handler = None):
         self.conn = conn
         self.read_buffer : str = ""
         self.write_buffer : str = ""
@@ -14,6 +14,7 @@ class HTTPSession:
         self.content_length : int = 0
         self.phase : int = 0
         self.requests : list[Request] = []
+        self.request_handler = request_handler
 
     def send_response(self, response):
         self.conn.send()
@@ -75,26 +76,16 @@ class HTTPSession:
                 else:
                     return
 
-self.request_body, self.read_buffer = extract_body(self.read_buffer, self.content_length)
+            self.request_body, self.read_buffer = extract_body(self.read_buffer, self.content_length)
 
-if self.request_body is not None:
-    request = Request(line=self.request_line, header=self.request_header, body=self.request_body)
-    self.requests.append(request)
-    self.reset_request()
-
-elif self.request_body is None and remaining != "":
-    return 
-            
-            if body is not None:
-                self.request_body = body
-                self.read_buffer = remaining
-            
+            if self.request_body is not None:
                 request = Request(line=self.request_line, header=self.request_header, body=self.request_body)
                 self.requests.append(request)
                 self.reset_request()
 
-            elif body is None and remaining != "":
+            elif self.request_body is None and remaining != "":
                 return 
+                    
 
 sessions = {}
         
