@@ -28,5 +28,8 @@ class RequestLine(Line):
         raise TypeError(f"= not supported between instances of '{self.__class__}' and '{type(other)}'")
 
 class Request(Message):
+    line : RequestLine
+    header : RequestHeader
+    
     def __init__(self, line : RequestLine, header : RequestHeader, body : Line):
         super().__init__(line, header, body)
