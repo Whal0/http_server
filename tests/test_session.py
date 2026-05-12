@@ -2,7 +2,7 @@ from pytest import fixture
 from server.session import HTTPSession
 from unittest.mock import MagicMock
 import pytest
-from server.parser import Request, RequestHeader, RequestLine
+from server.parser.request import Request, RequestHeader, RequestLine
 
 # tests and pytest.ini is designed for having {working_folder} as http_server,
 # if wish to use different one, change the paths in .vscode/launch.json accordingly
@@ -335,5 +335,5 @@ def test_get_requests_partial_body():
     assert session.read_buffer == "AAA"
     assert session.request_line == expected_line
     assert session.request_header == expected_header
-    assert session.request_body == ""
+    assert session.request_body == None
     assert session.content_length == 5
