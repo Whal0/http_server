@@ -45,6 +45,20 @@ class TestFileManager(unittest.TestCase):
         self.assertEqual(file.size, len(b"test"))
         self.assertFalse(file.is_directory)
 
+    def test_get_file_large_file_chunks(self):
+        large_filename = "large_file.txt"
+        large_file_path = os.path.join(self.base_test_dir, large_filename)
+        # Create a file larger than default chunk size (8192)
+        large_data = b"A" * 10000
+        with open(large_file_path, "wb") as f:
+            f.write(large_data)
+        
+        file = self.file_manager.get_file(large_filename)
+        
+        self.assertEqual(file.mime_type, 'text/plain')
+        self.assertEqual(b''.join(file.data), large_data)
+        self.assertEqual(file.size, len(large_data))
+
     def test_get_file_not_found(self):
         with self.assertRaises(FileNotFoundException):
             self.file_manager.get_file("ghost_file.txt")
