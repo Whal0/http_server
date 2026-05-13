@@ -31,7 +31,7 @@ class Message:
         self.body = body
 
     def __str__(self):
-        return str(self.line) + str(self.header) + self.body
+        return str(self.line) + str(self.header) + str(self.body)
 
     def __eq__(self, other):
         if isinstance(other, Message):
