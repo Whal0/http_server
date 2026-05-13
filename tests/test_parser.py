@@ -1,7 +1,8 @@
 import unittest
 from server.exceptions import InvalidRequestException, VersionNotSupportedException
 from server.parser.parser import parse_request_line, parse_header, extract_request_line, extract_headers, extract_body
-from server.parser.request import RequestHeader, RequestLine
+from server.parser.request import RequestHeader, RequestLine, Request
+from server.parser.response import ResponseLine, ResponseHeader, Response
 
 class TestParser(unittest.TestCase):
 
@@ -123,6 +124,80 @@ class TestParser(unittest.TestCase):
         body, remaining = extract_body(buffer, 10)
         self.assertIsNone(body)
         self.assertEqual(remaining, buffer)
+
+
+##################
+###EQ
+    
+    #NOT IMPLEMENTED
+    # def test_responses_eq(self):
+    #     response_line1 = ResponseLine("HTTP/1.1", 200)
+    #     response_header1 = ResponseHeader({"Content-Type": "text/plain"})
+    #     response1 = Response(response_line1, response_header1, "Response Body")
+
+    #     response_line2 = ResponseLine("HTTP/1.1", 404)
+    #     response_header2 = ResponseHeader({"Content-Type": "text/html"})
+    #     response2 = Response(response_line2, response_header2, "Not Found")
+
+    #     self.assertNotEqual(response1, response2)
+
+    def test_requests_eq(self):
+        request_line1 = RequestLine("GET", "/", "HTTP/1.1")
+        request_header1 = RequestHeader({"Host": "localhost"})
+        request1 = Request(request_line1, request_header1, "Request Body")
+
+        request_line2 = RequestLine("POST", "/submit", "HTTP/1.1")
+        request_header2 = RequestHeader({"Host": "localhost"})
+        request2 = Request(request_line2, request_header2, "Request Body")
+
+        self.assertNotEqual(request1, request2)
+
+    def test_cross_eq(self):
+        request_line = RequestLine("GET", "/", "HTTP/1.1")
+        request_header = RequestHeader({"Host": "localhost"})
+        request = Request(request_line, request_header, "Request Body")
+
+        response_line = ResponseLine("HTTP/1.1", 200)
+        response_header = ResponseHeader({"Content-Type": "text/plain"})
+        response = Response(response_line, response_header, "Response Body")
+
+        with self.assertRaises(TypeError):
+            self.assertNotEqual(request, response)
+    
+    def test_request_eq_correct(self):
+        request_line1 = RequestLine("GET", "/", "HTTP/1.1")
+        request_header1 = RequestHeader({"Host": "localhost"})
+        request1 = Request(request_line1, request_header1, "Request Body")
+
+        request_line2 = RequestLine("GET", "/", "HTTP/1.1")
+        request_header2 = RequestHeader({"Host": "localhost"})
+        request2 = Request(request_line2, request_header2, "Request Body")
+
+        self.assertEqual(request1, request2)
+
+    #TODO: tu bug
+    # def test_request_eq_correct_v2(self):
+    #     request_line1 = RequestLine("GET", "/", "HTTP/1.1")
+    #     request_header1 = RequestHeader({"Host": "localhost"})
+    #     request1 = Request(request_line1, request_header1, "Request Body")
+
+    #     request_line2 = RequestLine("GET", "/", "HTTP/1.1")
+    #     request_header2 = RequestHeader({"Host": "localhost", "Content-Length": "42", "Connection": "keep-alive"})
+    #     request2 = Request(request_line2, request_header2, "Request Body")
+
+    #     self.assertEqual(request1, request2)
+
+    #NOT IMPLEMENTED
+    # def test_response_eq_correct(self):
+    #     response_line1 = ResponseLine("HTTP/1.1", 200)
+    #     response_header1 = ResponseHeader({"Content-Type": "text/plain"})
+    #     response1 = Response(response_line1, response_header1, "Response Body")
+
+    #     response_line2 = ResponseLine("HTTP/1.1", 200)
+    #     response_header2 = ResponseHeader({"Content-Type": "text/plain"})
+    #     response2 = Response(response_line2, response_header2, "Response Body")
+
+    #     self.assertEqual(response1, response2)
 
 if __name__ == "__main__":
     unittest.main()
