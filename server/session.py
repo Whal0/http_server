@@ -1,5 +1,6 @@
 #from serverd import Connection
-from server.parser import Request, RequestHeader, RequestLine, extract_request_line, extract_headers, extract_body
+from server.parser.parser import extract_request_line, extract_headers, extract_body
+from server.parser.request import Request, RequestHeader, RequestLine
 import socket
 from typing import Tuple
 

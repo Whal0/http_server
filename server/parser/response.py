@@ -1,5 +1,5 @@
 from server.parser.message import Header, Line, Message
-from util.consts import STATUS_CODE
+from server.util.consts import STATUS_CODE
 
 class ResponseHeader(Header):
     def add_header(self, header, value):
