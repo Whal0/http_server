@@ -5,13 +5,14 @@ from datetime import datetime, timezone
 from server.consts import MIME_TYPES
 from server.exceptions import FileNotFoundException, DirectoryAccessForbiddenException, NotModifiedException, FileOperationException
 from hashlib import md5
+from typing import Iterable
 
 @dataclass(frozen=True) #frozen for read-only
 class File:
     path: str
     mime_type: str
     last_modified: datetime
-    data: bytes | None
+    data: Iterable[bytes] | None
     size: int
     etag: str # for if-matching and cacheing
     is_directory: bool = False
@@ -86,11 +87,14 @@ class FileManager:
             is_directory=metadata['is_directory']
         )  # 200
 
-    def _read_file(self, path: str) -> bytes:
+    def _read_file(self, path: str, chunk_size: int = 1024) -> Iterable[bytes]:
         try:
             with open(path, 'rb') as file:
-                data = file.read()
-                return data 
+                while True:
+                    chunk = file.read(chunk_size)
+                    if not chunk:
+                        break
+                    yield chunk
         except OSError as e:
             raise OSError(f'Failed to read file {path}: {str(e)}')  # 500
         
