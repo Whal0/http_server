@@ -20,18 +20,14 @@ class Header:
             return True
         raise TypeError(f"= not supported between instances of '{self.__class__}' and '{type(other)}'")
         
-class Line:
-    def __init__(self, version):
-        self.version = version
-
 class Message:
-    def __init__(self, line : Line,  header : Header, body : Optional[str]):
+    def __init__(self, line,  header : Header, body : Optional[str]):
         self.line = line
         self.header = header
         self.body = body
 
     def __str__(self):
-        return str(self.line) + str(self.header) + self.body
+        return str(self.line) + str(self.header) + str(self.body)
 
     def __eq__(self, other):
         if isinstance(other, Message):

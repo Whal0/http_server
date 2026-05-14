@@ -1,11 +1,11 @@
-from server.parser.message import Header, Line, Message
+from server.parser.message import Header, Message
 
 class RequestHeader(Header):
     pass
 
-class RequestLine(Line):
+class RequestLine:
     def __init__(self, method, url, version):
-        super().__init__(version)
+        self.version = version
         self.method = method
         self.url = url 
     
@@ -31,5 +31,5 @@ class Request(Message):
     line : RequestLine
     header : RequestHeader
     
-    def __init__(self, line : RequestLine, header : RequestHeader, body : Line):
+    def __init__(self, line : RequestLine, header : RequestHeader, body : str): # same as response
         super().__init__(line, header, body)
