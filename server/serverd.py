@@ -10,7 +10,7 @@ class Connection:
     def __init__(self, sock : socket.socket):
         self.sock = sock
         # it will be a simplequeue
-        self.send_generator_buffer_list : list[Iterator] =  []
+        self.send_generator_buffer_queue : list[Iterator] =  []
         self.curr_generator_buffer : Iterator = None
         self.send_buffer : bytes = b''
         self.is_sending : bool = False
@@ -47,8 +47,8 @@ class Connection:
                     return
                 
                 except StopIteration:
-                    if self.send_generator_buffer_list:
-                        self.curr_generator_buffer = self.send_generator_buffer_list.pop(0)
+                    if self.send_generator_buffer_queue:
+                        self.curr_generator_buffer = self.send_generator_buffer_queue.pop(0)
                         self.send_buffer += next(self.curr_generator_buffer)
                         return
 
@@ -57,7 +57,7 @@ class Connection:
                     sel.modify(self.sock, selectors.EVENT_READ)
                     return
         else:
-            self.curr_generator_buffer = self.send_generator_buffer_list.pop(0)
+            self.curr_generator_buffer = self.send_generator_buffer_queue.pop(0)
             self.send_buffer += next(self.curr_generator_buffer)
     
     def _send_data(self):
@@ -87,7 +87,7 @@ class Connection:
             self.is_sending = True
             sel.modify(self.sock, selectors.EVENT_READ | selectors.EVENT_WRITE)
             
-        self.send_generator_buffer_list.append(get_data)
+        self.send_generator_buffer_queue.append(get_data)
         
 class SelectServer:
     HOST =  "127.0.0.1"
