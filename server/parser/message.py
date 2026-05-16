@@ -9,15 +9,8 @@ class Header:
 
     def __eq__(self, other):
         if isinstance(other, Header):
-            for self_d, other_d in zip(self.headers.items(), other.headers.items()):
+            return self.headers == other.headers
 
-                if not self_d == other_d:
-                    print(self_d)
-                    print(other_d)
-                    print(f"{self_d[0]} : {self_d[1]} is not equal to {other_d[0]} : {other_d[1]}") 
-                    return False
-                    
-            return True
         raise TypeError(f"= not supported between instances of '{self.__class__}' and '{type(other)}'")
         
 class Message:
@@ -35,7 +28,7 @@ class Message:
                 print(f"{self.line} is not equal to {other.line}")
                 return False
             if not self.header == other.header:
-                print(f"{self.header} is not equal to {other.header}")
+                print(f"{self.header}\n is not equal to \n\n{other.header}")
                 return False
             if not self.body == other.body:
                 print(f"{self.body} is not equal to {other.body}")
