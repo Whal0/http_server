@@ -1,18 +1,18 @@
 # maybe use an enum for this?
 
 STATUS_CODE = {
-    200: "200 OK",
-    201: "201 Created",
-    204: "204 No Content",
-    301: "301 Moved Permanently",
-    302: "302 Found",
-    400: "400 Bad Request",
-    401: "401 Unauthorized",
-    403: "403 Forbidden",
-    404: "404 Not Found",
-    405: "405 Method Not Allowed",
-    500: "500 Internal Server Error",
-    503: "503 Service Unavailable",
+    200: "OK",
+    201: "Created",
+    204: "No Content",
+    301: "Moved Permanently",
+    302: "Found",
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "Not Found",
+    405: "Method Not Allowed",
+    500: "Internal Server Error",
+    503: "Service Unavailable",
 }
 
 # https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types/Common_types
