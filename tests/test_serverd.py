@@ -2,6 +2,7 @@ import pytest
 from server.serverd import Connection
 from unittest.mock import MagicMock, call
 from pytest import MonkeyPatch
+from queue import SimpleQueue
 
 from server import serverd
 
@@ -53,7 +54,7 @@ def test_send_data_gen_list_empty_curr_gen_empty_buffer_empty(monkeypatch, mockS
     conn._send_data()
     
     assert conn.is_sending == False
-    assert conn.send_generator_buffer_queue == []
+    assert conn.send_generator_buffer_queue.empty()
     assert conn.send_buffer == b'' 
     
     assert mockSelector.method_calls == [call.modify(mockSock, 1)]
@@ -71,7 +72,7 @@ def test_send_data_gen_list_empty_curr_gen_filled_buffer_empty(monkeypatch, mock
     conn._send_data()
     
     assert conn.is_sending == True
-    assert conn.send_generator_buffer_queue == []
+    assert conn.send_generator_buffer_queue.empty()
     assert conn.send_buffer == b''
     
     assert mockSock.method_calls == [call.send(b'\x01')]
@@ -91,7 +92,7 @@ def test_send_data_gen_list_empty_curr_gen_filled_buffer_filled(monkeypatch, moc
     conn._send_data()
     
     assert conn.is_sending == True
-    assert conn.send_generator_buffer_queue == []
+    assert conn.send_generator_buffer_queue.empty()
     assert conn.send_buffer == b'\x01'
     
     assert mockSock.method_calls == [call.send(b'\x01\x01')]
@@ -105,12 +106,13 @@ def test_send_data_gen_list_filled_curr_gen_empty_buffer_empty(monkeypatch, mock
     monkeypatch.setattr(serverd, "sel", mockSelector)   
 
     conn.curr_generator_buffer = mock_file_iterator_empty
-    conn.send_generator_buffer_queue = [mock_file_iterator_filled]
+    conn.send_generator_buffer_queue = SimpleQueue()
+    conn.send_generator_buffer_queue.put(mock_file_iterator_filled)
     
     conn._send_data()
     
     assert conn.is_sending == True
-    assert conn.send_generator_buffer_queue == []
+    assert conn.send_generator_buffer_queue.empty()
     assert conn.send_buffer == b''
     
     assert mockSock.method_calls == [call.send(b'\x01')]
@@ -125,12 +127,13 @@ def test_send_data_gen_list_filled_curr_gen_empty_buffer_filled(monkeypatch, moc
 
     conn.curr_generator_buffer = mock_file_iterator_empty
     conn.send_buffer = b'\x01'
-    conn.send_generator_buffer_queue = [mock_file_iterator_filled]
+    conn.send_generator_buffer_queue = SimpleQueue()
+    conn.send_generator_buffer_queue.put(mock_file_iterator_filled)
     
     conn._send_data()
     
     assert conn.is_sending == True
-    assert conn.send_generator_buffer_queue == []
+    assert conn.send_generator_buffer_queue.empty()
     assert conn.send_buffer == b'\x01' 
     
     assert mockSock.method_calls == [call.send(b'\x01\x01')]
