@@ -41,9 +41,23 @@ class TestFileManager(unittest.TestCase):
         file = self.file_manager.get_file(self.test_filename)
         
         self.assertEqual(file.mime_type, 'text/plain')
-        self.assertEqual(file.data, b"test")
+        self.assertEqual(b''.join(file.data), b"test")
         self.assertEqual(file.size, len(b"test"))
         self.assertFalse(file.is_directory)
+
+    def test_get_file_large_file_chunks(self):
+        large_filename = "large_file.txt"
+        large_file_path = os.path.join(self.base_test_dir, large_filename)
+        # Create a file larger than default chunk size (8192)
+        large_data = b"A" * 10000
+        with open(large_file_path, "wb") as f:
+            f.write(large_data)
+        
+        file = self.file_manager.get_file(large_filename)
+        
+        self.assertEqual(file.mime_type, 'text/plain')
+        self.assertEqual(b''.join(file.data), large_data)
+        self.assertEqual(file.size, len(large_data))
 
     def test_get_file_not_found(self):
         with self.assertRaises(FileNotFoundException):
@@ -98,7 +112,7 @@ class TestFileManager(unittest.TestCase):
             f.write(index_content)
             
         file_obj = self.file_manager.get_file(sub_dir_name)
-        self.assertEqual(file_obj.data, index_content)
+        self.assertEqual(b''.join(file_obj.data), index_content)
 
     def test_get_file_modified_since_is_older(self):
         stats = os.stat(self.test_file_path)
@@ -107,7 +121,7 @@ class TestFileManager(unittest.TestCase):
         past_date = datetime.datetime.fromtimestamp(mtime - 10000, tz=datetime.timezone.utc)
         file_obj = self.file_manager.get_file(self.test_filename, if_modified_since=past_date)
         
-        self.assertEqual(file_obj.data, b"test")
+        self.assertEqual(b''.join(file_obj.data), b"test")
 
     def test_get_last_modified_format(self):
         last_modified = self.file_manager._get_last_modified(self.test_filename)
