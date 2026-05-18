@@ -31,5 +31,5 @@ class Request(Message):
     line : RequestLine
     header : RequestHeader
     
-    def __init__(self, line : RequestLine, header : RequestHeader, body : str): # same as response
+    def __init__(self, line : RequestLine, header : RequestHeader, body : str = None): # same as response
         super().__init__(line, header, body)
