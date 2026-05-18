@@ -32,7 +32,7 @@ class ResponseHandler:
     @staticmethod
     def _create_response_501() -> Response:
         response = __class__._create_response()        
-        response.line.status_code = 400
+        response.line.status_code = 501
 
         return response
     
@@ -68,7 +68,7 @@ class ResponseHandler:
             response.body = file.data
         except PermissionError:
             response.line.status_code = 400
-        except (DirectoryAccessForbiddenException, FileNotFoundError):
+        except (DirectoryAccessForbiddenException, FileNotFoundException):
             response.line.status_code = 404
         
         return response
@@ -84,7 +84,7 @@ class ResponseHandler:
 
         except PermissionError:
             response.line.status_code = 400
-        except (DirectoryAccessForbiddenException, FileNotFoundError):
+        except (DirectoryAccessForbiddenException, FileNotFoundException):
             response.line.status_code = 404
 
         return response
