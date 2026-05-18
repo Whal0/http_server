@@ -101,7 +101,7 @@ class ResponseHandler:
         response : Response = self._create_response()
 
         try:
-            self.file_manager.put_file(request.line.url)
+            self.file_manager.put_file(request.line.url, bytes(request.body))
 
             response.line.status_code = 201
             response.header.add_header("Content-Location", request.line.url)
