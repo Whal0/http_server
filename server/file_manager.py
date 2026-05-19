@@ -3,7 +3,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from hashlib import md5
-from server.consts import MIME_TYPES
+from server.util.consts import MIME_TYPES
 from server.exceptions import FileNotFoundException, DirectoryAccessForbiddenException, NotModifiedException, FileOperationException
 import server.util.http_time as ht
 from typing import Iterable
