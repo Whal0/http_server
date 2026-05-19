@@ -1,10 +1,11 @@
 import os
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
+from hashlib import md5
 from server.consts import MIME_TYPES
 from server.exceptions import FileNotFoundException, DirectoryAccessForbiddenException, NotModifiedException, FileOperationException
-from hashlib import md5
+import server.util.http_time as ht
 
 @dataclass(frozen=True) #frozen for read-only
 class File:
@@ -70,7 +71,9 @@ class FileManager:
     def get_file(self, path: str, if_modified_since: datetime | None = None) -> File:
         full_path = self._resolve(path)
         metadata = self._stat(full_path)
-
+        if if_modified_since is not None:
+            if_modified_since = ht.format_date(if_modified_since)
+        
         if if_modified_since and if_modified_since >= metadata['last_modified']:
             raise NotModifiedException()  # 304
 
@@ -98,22 +101,18 @@ class FileManager:
         if not os.access(path, os.R_OK):
             raise DirectoryAccessForbiddenException(f'Access denied to {path}')  # 403 or 404 for security
 
-
     def _get_last_modified(self, path: str) -> str:
-        full_path = self._resolve(path)
         
-        if not os.path.exists(full_path):
-            raise FileNotFoundException()  # 404
+        if not os.path.exists(path):
+            raise FileNotFoundException()  
         
         try:
-            mtime = os.path.getmtime(full_path)
-            dt = datetime.fromtimestamp(mtime, tz=timezone.utc)
-            
-            # Http header format section 3.3.1
-            return dt.strftime('%a, %d %b %Y %H:%M:%S GMT')  # 200
+            mtime = os.path.getmtime(path)
+            return ht.get_date_from_timestamp(mtime) 
         
         except OSError as e:
-            raise OSError(f'Failed to get last modified time for {path}: {str(e)}')  # 500
+            raise OSError(f'Failed to get last modified time for {path}: {str(e)}')
+
     
     def delete_file(self, path: str) -> None:
         full_path = self._resolve(path)
@@ -165,7 +164,7 @@ class FileManager:
             mime_type = self._get_mime_type(path)
             etag = self._generate_etag(size, mtime)
             
-            last_modified = datetime.fromtimestamp(mtime, tz=timezone.utc)
+            last_modified = self._get_last_modified(path)
             
             return {
                 'size': size,

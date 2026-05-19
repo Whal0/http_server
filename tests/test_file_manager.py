@@ -110,7 +110,8 @@ class TestFileManager(unittest.TestCase):
         self.assertEqual(file_obj.data, b"test")
 
     def test_get_last_modified_format(self):
-        last_modified = self.file_manager._get_last_modified(self.test_filename)
+        path = self.file_manager._resolve(self.test_filename)
+        last_modified = self.file_manager._get_last_modified(path)
         
         self.assertIsNotNone(last_modified)
         self.assertTrue(last_modified.endswith("GMT"))
