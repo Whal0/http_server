@@ -18,3 +18,12 @@ class NotModifiedException(BaseHTTPException):
 
 class FileOperationException(BaseHTTPException):
     pass
+
+class BadHeaderException(BaseHTTPException):
+    pass
+
+class BadLineException(BaseHTTPException):
+    pass
+
+class MalformedResponseException(BaseHTTPException):
+    pass
