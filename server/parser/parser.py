@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Tuple
-from server.exceptions import InvalidRequestException, VersionNotSupportedException
+from server.util.exceptions import InvalidRequestException, VersionNotSupportedException
 from server.util.consts import SERVED_HEADER_FIELDS, CORRECT_HEADER_FIELDS
 from server.parser.request import RequestHeader, RequestLine
 

@@ -1,5 +1,6 @@
 from server.parser.message import Header, Message
 from server.util.consts import STATUS_CODE
+from typing import Iterator
 
 class ResponseHeader(Header):
     def add_header(self, header, value):
@@ -20,6 +21,9 @@ class ResponseLine:
         self._status_code = code
         self.phrase = STATUS_CODE[int(code)]
 
+    def __str__(self):
+        return f"{self.version} {self._status_code} {self.phrase}\r\n"
+
     def __eq__(self, other):
         if isinstance(other, ResponseLine): 
             if not self.version == other.version:
@@ -35,10 +39,20 @@ class ResponseLine:
         
         raise TypeError(f"= not supported between instances of '{self.__class__}' and '{type(other)}'")
 
-
 class Response(Message):
     line: ResponseLine 
     header: ResponseHeader
     
-    def __init__(self, line : ResponseLine, header : ResponseHeader, body : str = None): #czemu tu był Line?
+    def __init__(self, line : ResponseLine, header : ResponseHeader, body : Iterator[bytes] = None): #czemu tu był Line?
         super().__init__(line, header, body)
+
+    def __iter__(self) -> Iterator[bytes]:
+        return self._iterator()
+
+    def _iterator(self):
+        yield bytes(str(self.line), encoding='utf-8')
+        yield bytes(str(self.header), encoding='utf-8')
+        
+        if self.body is not None:
+                yield from self.body
+        else: return 

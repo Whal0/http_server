@@ -2,7 +2,7 @@ from server.parser.response import Response, ResponseHeader, ResponseLine
 import datetime
 from server.parser.request import Request
 from server.file_manager import FileManager, File
-from server.exceptions import DirectoryAccessForbiddenException, FileNotFoundException
+from server.util.exceptions import DirectoryAccessForbiddenException, FileNotFoundException
 
 class ResponseHandler:
 
@@ -70,6 +70,8 @@ class ResponseHandler:
             response.line.status_code = 400
         except (DirectoryAccessForbiddenException, FileNotFoundException):
             response.line.status_code = 404
+        except Exception:
+            response.line.status_code = 500
         
         return response
 

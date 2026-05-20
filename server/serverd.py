@@ -1,8 +1,11 @@
 import socket
 import selectors
+import select
 from server.session import  HTTPSession, sessions
 from typing import Iterator
 from queue import SimpleQueue
+from server.response_handler import ResponseHandler
+from server.file_manager import FileManager
 
 sel = selectors.DefaultSelector()
 
@@ -33,7 +36,7 @@ class Connection:
             sel.unregister(self.sock)
             self.sock.close()
     
-    def _close_conn(self):
+    def close_conn(self):
         print("closing connection")
         sel.unregister(self.sock)
         self.sock.close()
@@ -43,7 +46,8 @@ class Connection:
         if self.curr_generator_buffer:
             if 0 <= len(self.send_buffer) < 1024:
                 try:
-                    self.send_buffer += next(self.curr_generator_buffer)
+                    next_bytes = next(self.curr_generator_buffer)
+                    self.send_buffer = self.send_buffer + next_bytes
                     return
                 
                 except StopIteration:
@@ -60,7 +64,7 @@ class Connection:
             self.curr_generator_buffer = self.send_generator_buffer_queue.pop(0)
             self.send_buffer += next(self.curr_generator_buffer)
     
-    def _send_data(self):
+    def send_data(self):
 
         self._fill_buffer()
         
@@ -75,9 +79,9 @@ class Connection:
             except KeyboardInterrupt:
                 sel.unregister(self.sock)
                 self.sock.close()
-            except Exception: 
-                sel.unregister(self.sock)
-                self.sock.close()
+            # except Exception: 
+            #     sel.unregister(self.sock)
+            #     self.sock.close()
         else:
             self.sock.close()
                     
@@ -105,38 +109,54 @@ class SelectServer:
         
         conn = Connection(clientSocket)
 
-        sessions[clientSocket] = HTTPSession(conn)
+        sessions[clientSocket] = HTTPSession(conn, response_handler=ResponseHandler(file_manager=FileManager(base_dir="public")))
 
         sel.register(clientSocket, selectors.EVENT_READ, "read")
+
+    def serve_read(self, sock : socket.socket):
+        # if sock.fileno()    == -1:
+        #     sessions[sock].close_session()
+        #     return 
+        
+        if not sessions.get(sock):
+            self._accept()
+        else:
+            sessions[sock].read()
+   
+    def serve_write(self, sock):
+        sessions[sock].conn.send_data()
 
     def run_server(self):
         self.serverSocket.listen(100)
         sel.register(self.serverSocket, selectors.EVENT_READ, "accept")
 
         print("server started")
-        try:
-            print("start event loop")
-            while True:
+        while True:
+
+            try:
                 events = sel.select()
                 for key, mask in events:
-                    
-                    if key.data == "read":
-                        print("read data")
+                    if key.fd == -1:
+                        sessions[key.fileobj].close_session()
+                        continue
 
-                        sessions[key.fileobj].read()
+                    if mask == selectors.EVENT_READ:
+                        self.serve_read(key.fileobj)
 
-                    elif key.data == "accept":
-                        print("accept connetion")
-                        self._accept(key.fileobj)
-                        
-                    elif key.data == "write":
-                        print("sending data")
-                        sessions[key.fileobj].write()
-                
-        finally:
-            self._stop_server()
+                    elif mask == selectors.EVENT_WRITE:                
+                        self.serve_write(key.fileobj)
+
+            except KeyboardInterrupt:
+                self._stop_server()
+            # except Exception:
+            #     sessions[key.fileobj].conn._close_conn()
                     
     def _stop_server(self):
+        for session in sessions.values():
+            sel.unregister(session.conn.sock)
+            session.conn.close_conn() 
+        
+        sel.unregister(self.serverSocket)
         print("close server")
         self.serverSocket.close()
 

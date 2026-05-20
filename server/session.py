@@ -3,9 +3,10 @@ from server.parser.parser import extract_request_line, extract_headers, extract_
 from server.parser.request import Request, RequestHeader, RequestLine
 import socket
 from typing import Tuple
+from server.response_handler import ResponseHandler
 
 class HTTPSession:
-    def __init__(self, conn, request_handler = None):
+    def __init__(self, conn, response_handler = None):
         self.conn = conn
         self.read_buffer : str = ""
         self.write_buffer : str = ""
@@ -15,29 +16,17 @@ class HTTPSession:
         self.content_length : int = 0
         self.phase : int = 0
         self.requests : list[Request] = []
-        self.request_handler = request_handler
-
-    def send_response(self, response):
-        self.conn.send()
+        self.response_handler : ResponseHandler = response_handler
     
     def read(self) -> None:
         new_data = self.conn.read().decode()
         self.get_requests(new_data)
-        
+
         for request in self.requests:
             print(request)
+            response = self.response_handler.handle_request(request)
+            self.conn.write(iter(response))
 
-        for request in self.requests:
-            self.handle_request(request)
-            print("request served")
-        
-        self.close_session()
-
-    def handle_request(self, request):
-        #print(request)
-        response = "HTTP/1.1 200 OK"
-        self.send_response(response=response)
-    
     def close_session(self):
         self.conn.close_conn()
         sessions.pop(self.conn.sock)
@@ -87,12 +76,4 @@ class HTTPSession:
             elif self.request_body is None and remaining != "":
                 return 
                     
-
-sessions = {}
-        
-        
-        
-        
-            
-        
-        
+sessions = {}  

@@ -14,10 +14,19 @@
         },
         
         {
-            "name": "Python Debugger: http debug",
+            "name": "Python Debugger: http pytest debug",
             "type": "debugpy",
             "request": "launch",
             "module" : "pytest",
+            "console": "integratedTerminal",
+            "env": {"PYTHONPATH": "${workspaceFolder}"}
+        },
+
+        {
+            "name": "Python Debugger: http debug",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
             "console": "integratedTerminal",
             "env": {"PYTHONPATH": "${workspaceFolder}"}
         }

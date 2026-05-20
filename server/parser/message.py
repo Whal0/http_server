@@ -5,7 +5,7 @@ class Header:
         self.headers = headers
     
     def __str__(self):
-        return "".join(f"{k} : {v}\r\n" for k, v in self.headers.items())
+        return "".join(f"{k} : {v}\r\n" for k, v in self.headers.items()) + "\r\n"
 
     def __eq__(self, other):
         if isinstance(other, Header):
