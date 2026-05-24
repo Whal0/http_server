@@ -6,6 +6,10 @@ from server.util.consts import MIME_TYPES
 from server.util.exceptions import FileNotFoundException, DirectoryAccessForbiddenException, NotModifiedException, FileOperationException
 from hashlib import md5
 from typing import Iterable
+from server import config
+
+import logging
+logger : logging.Logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True) #frozen for read-only
 class File:
@@ -17,10 +21,13 @@ class File:
     etag: str # for if-matching and cacheing
     is_directory: bool = False
 
-
 class FileManager:
-    def __init__(self, base_dir='public'):
-        self.base_dir = os.path.abspath(base_dir)
+    def __init__(self, base_dir=None):
+        if base_dir:
+            self.base_dir = base_dir
+        else:
+            self.base_dir = os.path.abspath(config.CONFIG.base_dir) #os.path.abspath(base_dir)
+        
         self.DEFAULT_FILES = ("index.html", "index.htm")
 
     def _resolve(self, path: str) -> str: # idk correct path?
