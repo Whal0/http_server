@@ -1,6 +1,5 @@
 import yaml
 from dataclasses import dataclass
-from server.util.argparser import parse_args
 from argparse import Namespace, ArgumentParser
 
 CONFIG = None

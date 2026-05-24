@@ -4,6 +4,8 @@ import time
 
 from tests.e2e_test.client import ClientSocket
 import pytest
+import os
+from datetime import datetime, timezone
 
 @pytest.fixture
 def client():
@@ -24,18 +26,21 @@ def base_dir(tmp_path : Path):
     f = forbidden / "komendaplock.txt"
     f.write_text("co byś zrobił?")
     
-    forbidden.chmod(mode=0)
+    forbidden.chmod(mode=0o700)
     
     config = tmp_path / "config.yaml"
     config.write_text(f"base_d: {str(base_d)}")
     
     yield base_d
     
+    forbidden.chmod(0o777)
+    
 @pytest.fixture
 def server():
     process = subprocess.Popen(["python3", "-m", "server.serverd", "--config", "tests/config.yaml",  '--logfile', 'tests/logs', "--base_dir", "tests/test_public"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
     yield process
-    process.kill()
+    process.terminate()
+    process.wait(timeout=5)
 
 @pytest.fixture
 def server_tempdir(base_dir):
@@ -62,19 +67,20 @@ def test_put_e2e(client : ClientSocket, base_dir : Path, server_tempdir):
     assert response == expected_response
 
     assert next(base_dir.glob('kulawykonfident2.txt')).name
+
+
+def test_get_e2e(client : ClientSocket, base_dir : Path, server_tempdir : subprocess.Popen):
     
-def test_get_e2e(client : ClientSocket, server : subprocess.Popen):
-    
-    request = ("GET /kulawykonfident.txt HTTP/1.1\r\n"
+    request = ("GET /komendaplock.txt HTTP/1.1\r\n"
             "Connection : close\r\n"
             "Accept : */*\r\n"
             "Accept-Language : dn\r\n\r\n")
-
+    
     expected_response = ("HTTP/1.1 200 OK\r\n"
             "Content-Type : text/plain\r\n"
-            "Content-Length : 31\r\n"
-            "Last-Modified : 2026-05-22 15:25:02.813180+00:00\r\n\r\n"
-            "i ty takich ludzi nie szanujesz")
+            "Content-Length : 16\r\n"
+            f"Last-Modified : {datetime.fromtimestamp(os.stat(next(base_dir.glob('komendaplock.txt'))).st_mtime, tz=timezone.utc)}\r\n\r\n"
+            "co byś zrobił?")
     
     time.sleep(0.5)
     
@@ -83,17 +89,18 @@ def test_get_e2e(client : ClientSocket, server : subprocess.Popen):
     assert response == expected_response
     
 
-def test_head_e2e(client : ClientSocket, server : subprocess.Popen):
+def test_head_e2e(client : ClientSocket, server_tempdir : subprocess.Popen, base_dir : Path):
     
-    request = ("HEAD /kulawykonfident.txt HTTP/1.1\r\n"
+    request = ("HEAD /komendaplock.txt HTTP/1.1\r\n"
             "Connection : close\r\n"
             "Accept : */*\r\n"
             "Accept-Language : dn\r\n\r\n")
 
     expected_response = ("HTTP/1.1 200 OK\r\n"
             "Content-Type : text/plain\r\n"
-            "Content-Length : 31\r\n"
-            "Last-Modified : 2026-05-22 15:25:02.813180+00:00\r\n\r\n")
+            "Content-Length : 16\r\n"
+            f"Last-Modified : {datetime.fromtimestamp(os.stat(next(base_dir.glob('komendaplock.txt'))).st_mtime, tz=timezone.utc)}\r\n\r\n"
+            )
     
     time.sleep(0.5)
     
@@ -101,9 +108,9 @@ def test_head_e2e(client : ClientSocket, server : subprocess.Popen):
     
     assert response == expected_response
     
-def test_options_e2e(client : ClientSocket, server : subprocess.Popen):
+def test_options_e2e(client : ClientSocket, server_tempdir : subprocess.Popen):
     
-    request = ("OPTIONS /kulawykonfident.txt HTTP/1.1\r\n"
+    request = ("OPTIONS /komendaplockt.txt HTTP/1.1\r\n"
             "Connection : close\r\n"
             "Accept : */*\r\n"
             "Accept-Language : dn\r\n\r\n")
@@ -117,9 +124,9 @@ def test_options_e2e(client : ClientSocket, server : subprocess.Popen):
     
     assert response == expected_response
 
-def test_unknown_method(client : ClientSocket, server : subprocess.Popen):
+def test_unknown_method(client : ClientSocket, server_tempdir : subprocess.Popen):
 
-    request = ("MAMMON /kulawykonfident.txt HTTP/1.1\r\n"
+    request = ("MAMMON /komendaplock.txt HTTP/1.1\r\n"
             "Connection : close\r\n"
             "Accept : */*\r\n"
             "Accept-Language : dn\r\n\r\n")
@@ -148,9 +155,9 @@ def test_unknown_method(client : ClientSocket, server : subprocess.Popen):
 #     assert response == expected_response
     
     
-def test_get_backwardpath(client : ClientSocket, server : subprocess.Popen):
+def test_get_backwardpath(client : ClientSocket, server_tempdir : subprocess.Popen):
     
-    request = ("GET /../../kulawykonfident.txt HTTP/1.1\r\n"
+    request = ("GET /../../komendaplock.txt HTTP/1.1\r\n"
         "Connection : close\r\n"
         "Accept : */*\r\n"
         "Accept-Language : dn\r\n\r\n")
@@ -163,7 +170,7 @@ def test_get_backwardpath(client : ClientSocket, server : subprocess.Popen):
     
     assert response == expected_response
     
-def test_get_nonexistent_file(client : ClientSocket, server : subprocess.Popen):
+def test_get_nonexistent_file(client : ClientSocket, server_tempdir : subprocess.Popen):
     
     request = ("GET kulawykonfident3.txt HTTP/1.1\r\n"
         "Connection : close\r\n"
