@@ -90,8 +90,8 @@ def test_handle_request_put(mock_file_manager):
         method="PUT",
         url="http://kulawykonfident.com/komendapłock",
         version="HTTP/1.1",
-    ), header=RequestHeader(headers={}),
-    body=bytes("pykpykpyk", encoding="utf-8")
+    ), header=RequestHeader(headers={"Content-Length : 9"}),
+    body="pykpykpyk"
     )
 
     expected_response = Response(line=ResponseLine(

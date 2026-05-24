@@ -4,7 +4,7 @@ import os
 import datetime
 import tempfile
 from server.file_manager import FileManager
-from server.exceptions import FileNotFoundException, DirectoryAccessForbiddenException, NotModifiedException
+from server.util.exceptions import FileNotFoundException, DirectoryAccessForbiddenException, NotModifiedException
 
 class TestFileManager(unittest.TestCase):
 

@@ -1,7 +1,6 @@
 from pytest import fixture
 from server.session import HTTPSession
 from unittest.mock import MagicMock
-import pytest
 from server.parser.request import Request, RequestHeader, RequestLine
 
 # tests and pytest.ini is designed for having {working_folder} as http_server,
