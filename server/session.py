@@ -4,6 +4,7 @@ from server.parser.request import Request, RequestHeader, RequestLine
 import socket
 from typing import Tuple
 from server.response_handler import ResponseHandler
+from server.util.logger import logger
 
 class HTTPSession:
     def __init__(self, conn, response_handler = None):
@@ -20,10 +21,14 @@ class HTTPSession:
     
     def read(self) -> None:
         new_data = self.conn.read().decode()
+        if not new_data:
+            self.close_session()
+            return
+        
         self.get_requests(new_data)
 
         for request in self.requests:
-            print(request)
+            logger.info("%s", str(request))
             response = self.response_handler.handle_request(request)
             self.conn.write(iter(response))
 
