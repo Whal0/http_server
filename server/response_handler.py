@@ -1,8 +1,9 @@
 from server.parser.response import Response, ResponseHeader, ResponseLine 
-import datetime
 from server.parser.request import Request
 from server.file_manager import FileManager, File
-from server.exceptions import DirectoryAccessForbiddenException, FileNotFoundException
+from server.util.exceptions import DirectoryAccessForbiddenException, FileNotFoundException
+
+from server.util.logger import logger
 
 class ResponseHandler:
 
@@ -68,8 +69,12 @@ class ResponseHandler:
             response.body = file.data
         except PermissionError:
             response.line.status_code = 400
-        except (DirectoryAccessForbiddenException, FileNotFoundException):
+        except (DirectoryAccessForbiddenException, FileNotFoundException) as e:
+            logger.debug("request not served - %s", str(e))
+            
             response.line.status_code = 404
+        except Exception:
+            response.line.status_code = 500
         
         return response
 
@@ -101,7 +106,7 @@ class ResponseHandler:
         response : Response = self._create_response()
 
         try:
-            self.file_manager.put_file(request.line.url, bytes(request.body))
+            self.file_manager.put_file(request.line.url, bytes(request.body, encoding='utf-8'))
 
             response.line.status_code = 201
             response.header.add_header("Content-Location", request.line.url)

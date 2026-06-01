@@ -1,10 +1,19 @@
 import socket
 import selectors
-from server.session import  HTTPSession, sessions
+import sys
 from typing import Iterator
-from queue import SimpleQueue
+from server import config
+
+from server.session import  HTTPSession, sessions
+from server.response_handler import ResponseHandler
+from server.file_manager import FileManager
 
 sel = selectors.DefaultSelector()
+
+import logging
+from server.util.logger import logger
+
+logger.setLevel(logging.DEBUG)
 
 class Connection:
     def __init__(self, sock : socket.socket):
@@ -21,21 +30,22 @@ class Connection:
     def read(self):
         try:
             message = self.sock.recv(1024)
+            
+            if message == b'':    
+                sel.unregister(self.sock)
+                self.sock.close()
+                return None
+                
             return message
         
-        except Exception: 
-            sel.unregister(self.sock)
-            self.sock.close()
-        except KeyboardInterrupt:
-            sel.unregister(self.sock)
-            self.sock.close()
         except BrokenPipeError:
             sel.unregister(self.sock)
             self.sock.close()
-    
-    def _close_conn(self):
+
+    def close_conn(self):
         print("closing connection")
-        sel.unregister(self.sock)
+        if self.sock.fileno() != -1:
+            sel.unregister(self.sock)
         self.sock.close()
     
     def _fill_buffer(self):
@@ -43,7 +53,8 @@ class Connection:
         if self.curr_generator_buffer:
             if 0 <= len(self.send_buffer) < 1024:
                 try:
-                    self.send_buffer += next(self.curr_generator_buffer)
+                    next_bytes = next(self.curr_generator_buffer)
+                    self.send_buffer = self.send_buffer + next_bytes
                     return
                 
                 except StopIteration:
@@ -60,7 +71,7 @@ class Connection:
             self.curr_generator_buffer = self.send_generator_buffer_queue.pop(0)
             self.send_buffer += next(self.curr_generator_buffer)
     
-    def _send_data(self):
+    def send_data(self):
 
         self._fill_buffer()
         
@@ -72,14 +83,8 @@ class Connection:
             except BrokenPipeError:
                 sel.unregister(self.sock)
                 self.sock.close()
-            except KeyboardInterrupt:
-                sel.unregister(self.sock)
-                self.sock.close()
-            except Exception: 
-                sel.unregister(self.sock)
-                self.sock.close()
         else:
-            self.sock.close()
+            sessions[self.sock].close_session()
                     
     def write(self, get_data : Iterator) -> None:
         
@@ -94,9 +99,12 @@ class SelectServer:
     PORT = 65432
         
     def __init__(self):
+        logger.info(f"starting server with config {config.CONFIG}")
+    
         self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
         self.serverSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.serverSocket.bind((self.HOST, self.PORT))
+        self.running = False
         
     def _accept(self):
 
@@ -105,41 +113,66 @@ class SelectServer:
         
         conn = Connection(clientSocket)
 
-        sessions[clientSocket] = HTTPSession(conn)
+        sessions[clientSocket] = HTTPSession(conn, response_handler=ResponseHandler(file_manager=FileManager()))
+        
+        try:
+            sel.get_key(clientSocket.fileno())
+            sel.unregister(clientSocket.fileno())
+        except KeyError:
+            pass
 
         sel.register(clientSocket, selectors.EVENT_READ, "read")
+        
+    def serve_read(self, sock : socket.socket):
+        # if sock.fileno()    == -1:
+        #     sessions[sock].close_session()
+        #     return 
+        
+        if not sessions.get(sock):
+            self._accept()
+        else:
+            sessions[sock].read()
+   
+    def serve_write(self, sock):
+        sessions[sock].conn.send_data()
 
     def run_server(self):
         self.serverSocket.listen(100)
         sel.register(self.serverSocket, selectors.EVENT_READ, "accept")
+        self.running = True
 
-        print("server started")
-        try:
-            print("start event loop")
-            while True:
-                events = sel.select()
-                for key, mask in events:
-                    
-                    if key.data == "read":
-                        print("read data")
+        logger.info("server started")
+        while self.running:
 
-                        sessions[key.fileobj].read()
+            events = sel.select()
+            for key, mask in events:
+                if key.fd == -1:
+                    sessions[key.fileobj].close_session()
+                    continue
 
-                    elif key.data == "accept":
-                        print("accept connetion")
-                        self._accept(key.fileobj)
-                        
-                    elif key.data == "write":
-                        print("sending data")
-                        sessions[key.fileobj].write()
-                
-        finally:
-            self._stop_server()
-                    
+                if mask == selectors.EVENT_READ:
+                    self.serve_read(key.fileobj)
+
+                elif mask == selectors.EVENT_WRITE:                
+                    self.serve_write(key.fileobj)
+   
     def _stop_server(self):
-        print("close server")
+        for session in sessions.copy().values():
+            session.close_session() 
+         
+        sel.unregister(self.serverSocket)
+        logger.info("close server")
         self.serverSocket.close()
+        self.running = False
 
 if __name__ == "__main__":
+    
     server = SelectServer()
-    server.run_server()
+    
+    try:
+        server.run_server()
+    except Exception as e:
+        logger.error(f"server stopped - %s", e)
+    except KeyboardInterrupt:
+        logger.info("Sever stopped by SIGKILL")
+        server._stop_server()

@@ -14,10 +14,21 @@
         },
         
         {
-            "name": "Python Debugger: http debug",
+            "name": "Python Debugger: http pytest debug",
             "type": "debugpy",
             "request": "launch",
             "module" : "pytest",
+            "args": ["-v"],
+            "console": "integratedTerminal",
+            "env": {"PYTHONPATH": "${workspaceFolder}"}
+        },
+
+        {
+            "name": "Python Debugger: http debug",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "args": ["--config", "tests/config.yaml", "--base_dir", "public", "--logfile", "tests/logs"],
             "console": "integratedTerminal",
             "env": {"PYTHONPATH": "${workspaceFolder}"}
         }

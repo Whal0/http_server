@@ -1,5 +1,5 @@
 import unittest
-from server.exceptions import InvalidRequestException, VersionNotSupportedException
+from server.util.exceptions import InvalidRequestException, VersionNotSupportedException
 from server.parser.parser import parse_request_line, parse_header, extract_request_line, extract_headers, extract_body
 from server.parser.request import RequestHeader, RequestLine, Request
 from server.parser.response import ResponseLine, ResponseHeader, Response
