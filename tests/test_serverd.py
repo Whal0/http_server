@@ -10,6 +10,11 @@ def mockSelector():
     mockSelector = MagicMock()
     yield mockSelector
 
+@pytest.fixture
+def mockLogger():
+    mockLogger = MagicMock()
+    yield mockLogger
+
 # in every test we assume that socket sends only one byte of data at the time
 @pytest.fixture
 def mockSock():
@@ -63,13 +68,14 @@ def test_send_data_gen_list_empty_curr_gen_empty_buffer_empty(monkeypatch, mockS
     assert mockSelector.method_calls == [call.modify(mockSock, 1)]
 
 # 0 1 0
-def test_send_data_gen_list_empty_curr_gen_filled_buffer_empty(monkeypatch, mockSelector, mockSock, conn : Connection, mock_file_iterator_filled):
+def test_send_data_gen_list_empty_curr_gen_filled_buffer_empty(mockLogger, monkeypatch, mockSelector, mockSock, conn : Connection, mock_file_iterator_filled):
     """
     case when current generator is filled and there is no data in buffer
     """
     
     monkeypatch.setattr(serverd, "sel", mockSelector)   
-
+    monkeypatch.setattr(serverd, "_get_client_server_socket_address", lambda x: "foo")
+    
     conn.curr_generator_buffer = mock_file_iterator_filled
     
     conn.send_data()
@@ -88,6 +94,7 @@ def test_send_data_gen_list_empty_curr_gen_filled_buffer_filled(monkeypatch, moc
     """
     
     monkeypatch.setattr(serverd, "sel", mockSelector)   
+    monkeypatch.setattr(serverd, "_get_client_server_socket_address", lambda x: "foo")
     
     conn.curr_generator_buffer = mock_file_iterator_filled
     conn.send_buffer = b'\x01' 
@@ -106,7 +113,8 @@ def test_send_data_gen_list_filled_curr_gen_empty_buffer_empty(monkeypatch, mock
     case when all data from buffer have been send, the current generator is empty but there is new generator in the q
     """
     
-    monkeypatch.setattr(serverd, "sel", mockSelector)   
+    monkeypatch.setattr(serverd, "sel", mockSelector) 
+    monkeypatch.setattr(serverd, "_get_client_server_socket_address", lambda x: "foo")  
 
     conn.curr_generator_buffer = mock_file_iterator_empty
     conn.send_generator_buffer_queue = [mock_file_iterator_filled]
@@ -126,6 +134,7 @@ def test_send_data_gen_list_filled_curr_gen_empty_buffer_filled(monkeypatch, moc
     """
 
     monkeypatch.setattr(serverd, "sel", mockSelector)   
+    monkeypatch.setattr(serverd, "_get_client_server_socket_address", lambda x: "foo")
 
     conn.curr_generator_buffer = mock_file_iterator_empty
     conn.send_buffer = b'\x01'
