@@ -14,12 +14,14 @@ from server.session import  HTTPSession, sessions
 from server.response_handler import ResponseHandler
 from server.file_manager import FileManager
 
+sessions : dict[socket.socket, HTTPSession]
+
 logger.setLevel(logging.DEBUG)
 
 sel = selectors.DefaultSelector()
 
 # util function for logging
-def _get_client_server_socket_address(sock):
+def _get_client_server_socket_address(sock : socket.socket) -> str:
     local_ip, local_port = sock.getsockname()
     remote_ip, remote_port = sock.getpeername()
 
@@ -40,11 +42,11 @@ class Connection:
     def __hash__(self):
         return hash(self.sock)
     
-    def read(self):
+    def read(self) -> bytes:
         """method reads incoming messages"""
         
         try:
-            message = self.sock.recv(1024)
+            message : bytes = self.sock.recv(1024)
             
             if message == b'':    
                 sel.unregister(self.sock)
@@ -57,7 +59,7 @@ class Connection:
             sel.unregister(self.sock)
             self.sock.close()
 
-    def close_conn(self):
+    def close_conn(self) -> None:
         """method takes care of cleaning up and closing connection"""
         
         logger.info("closing connection with peer, %s", _get_client_server_socket_address(self.sock))
@@ -66,7 +68,7 @@ class Connection:
             sel.unregister(self.sock)
         self.sock.close()
     
-    def _fill_buffer(self):
+    def _fill_buffer(self) -> None:
         """takes care of filling up buffer and managing sending/queue state"""
         
         # we fill as long as there is data in current generator
@@ -76,7 +78,7 @@ class Connection:
             if 0 <= len(self.send_buffer) < 1024:
                 try:
                     # if generator has data, we simply fill it
-                    next_bytes = next(self.curr_generator_buffer)
+                    next_bytes : bytes = next(self.curr_generator_buffer)
                     self.send_buffer = self.send_buffer + next_bytes
                     return
                 
@@ -99,7 +101,7 @@ class Connection:
             self.curr_generator_buffer = self.send_generator_buffer_queue.pop(0)
             self.send_buffer += next(self.curr_generator_buffer)
     
-    def send_data(self):
+    def send_data(self) -> None:
         """sends data if any available, otherwise makes sure to modify connection state accordingly"""
         
         self._fill_buffer()
@@ -107,7 +109,7 @@ class Connection:
         # its true if there is any data in the buffer
         if self.is_sending:
             try:                
-                bytes_send = self.sock.send(self.send_buffer)
+                bytes_send : int = self.sock.send(self.send_buffer)
                 self.send_buffer = self.send_buffer[bytes_send:]
                 
                 logger.info("sent %i bytes, %s",     
@@ -132,7 +134,7 @@ class Connection:
 class SelectServer:
     """Class that manages internal server state and its event loop"""
     
-    HOST =  "127.0.0.1"
+    HOST = "127.0.0.1"
     PORT = 65432
         
     def __init__(self):
@@ -143,7 +145,7 @@ class SelectServer:
         self.serverSocket.bind((self.HOST, self.PORT))
         self.running = False
         
-    def _accept(self):
+    def _accept(self) -> None:
         """accepts new connection"""
         
         clientSocket, addr = self.serverSocket.accept()    
@@ -167,7 +169,7 @@ class SelectServer:
 
         sel.register(clientSocket, selectors.EVENT_READ, "read")
         
-    def _serve_read(self, sock : socket.socket):
+    def _serve_read(self, sock : socket.socket) -> None:
         """serves the READ event"""
         
         # if sock.fileno()    == -1:
@@ -180,11 +182,11 @@ class SelectServer:
         else:
             sessions[sock].read()
    
-    def _serve_write(self, sock):
+    def _serve_write(self, sock) -> None:
         """serves the WRITE event"""
         sessions[sock].conn.send_data()
 
-    def run_server(self):
+    def run_server(self) -> None:
         """runs server's event loop"""
         
         self.serverSocket.listen(100)
@@ -209,7 +211,7 @@ class SelectServer:
                 elif mask == selectors.EVENT_WRITE:                
                     self._serve_write(key.fileobj)
 
-    def _stop_server(self):
+    def _stop_server(self) -> None:
         for session in sessions.copy().values():
             session.close_session() 
          
