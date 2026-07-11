@@ -1,3 +1,5 @@
+"""Module contains base class for Response and Request classes"""
+
 from typing import Dict, Optional
 
 class Header:

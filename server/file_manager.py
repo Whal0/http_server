@@ -1,14 +1,19 @@
+"""
+This module contains FileManager class that handles file management, it provides util methods for creation, addition and deletion of resources.
+"""
+
 import os
-import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Iterable
+
+from hashlib import md5
+import logging
+
+from server import config
 from server.util.consts import MIME_TYPES
 from server.util.exceptions import FileNotFoundException, DirectoryAccessForbiddenException, NotModifiedException, FileOperationException
-from hashlib import md5
-from typing import Iterable
-from server import config
 
-import logging
 logger : logging.Logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True) #frozen for read-only

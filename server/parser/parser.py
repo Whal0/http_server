@@ -1,4 +1,7 @@
-from typing import Optional, Dict, Tuple
+"""Module provides util functions that help with parsing individual parts of incoming requests"""
+
+from typing import Optional, Tuple
+
 from server.util.exceptions import InvalidRequestException, VersionNotSupportedException
 from server.util.consts import SERVED_HEADER_FIELDS, CORRECT_HEADER_FIELDS
 from server.parser.request import RequestHeader, RequestLine

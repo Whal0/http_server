@@ -7,8 +7,8 @@ import socket
 import selectors
 from typing import Iterator
 import logging
-from server.util.logger import logger
 
+from server.util.logger import logger
 from server import config
 from server.session import  HTTPSession, sessions
 from server.response_handler import ResponseHandler
