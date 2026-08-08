@@ -14,7 +14,7 @@ from server.response_handler import ResponseHandler
 from server.util.logger import logger
 
 class HTTPSession:
-    """HTTPSession object that deals with request parsing and processing logic"""
+    """Manages the request lifecycle for a single client connection."""
     
     def __init__(self, conn, response_handler = None):        
         self.conn = conn

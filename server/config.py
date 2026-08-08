@@ -1,8 +1,8 @@
 """Config module that handles parsing and exposing server configuration"""
+import yaml
 from dataclasses import dataclass
 from argparse import Namespace, ArgumentParser
 
-import yaml
 
 # global config constant that is set up to current config after set_config() is called
 CONFIG = None
@@ -20,7 +20,7 @@ def _parse_args() -> tuple[Namespace, list[str]]:
 
 @dataclass(frozen=True)
 class Config:
-    """Dataclass that holds defines possible configuration"""
+    """Read Only Dataclass that holds defines possible configuration"""
     
     config: str = "config.yaml"
     base_dir : str = "public"

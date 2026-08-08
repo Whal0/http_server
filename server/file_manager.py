@@ -1,5 +1,5 @@
 """
-This module contains FileManager class that handles file management, it provides util methods for creation, addition and deletion of resources.
+This module contains FileManager class that handles file management, path validation and reading file contents, it provides util methods for creation, addition and deletion of resources.
 """
 
 import os
@@ -18,6 +18,8 @@ logger : logging.Logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True) #frozen for read-only
 class File:
+    """Read Only Metadata and content representation for a served file resource."""
+
     path: str
     mime_type: str
     last_modified: datetime
@@ -27,6 +29,8 @@ class File:
     is_directory: bool = False
 
 class FileManager:
+    """Handles file lookup, metadata generation, and basic file operations."""
+
     def __init__(self, base_dir=None):
         if base_dir:
             self.base_dir = base_dir

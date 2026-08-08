@@ -3,6 +3,8 @@
 from typing import Dict, Optional
 
 class Header:
+    """Base container for HTTP headers stored as key-value pairs."""
+
     def __init__(self, headers : Dict[str, str]):
         self.headers = headers
     
@@ -16,6 +18,8 @@ class Header:
         raise TypeError(f"= not supported between instances of '{self.__class__}' and '{type(other)}'")
         
 class Message:
+    """Abstract base for HTTP request and response message objects."""
+
     def __init__(self, line,  header : Header, body : Optional[str]):
         self.line = line
         self.header = header

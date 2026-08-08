@@ -9,6 +9,7 @@ from server.util.exceptions import DirectoryAccessForbiddenException, FileNotFou
 from server.util.logger import logger
 
 class ResponseHandler:
+    """Maps parsed HTTP requests to the appropriate response object."""
 
     def __init__(self, file_manager):
         self.file_manager : FileManager = file_manager
