@@ -3,10 +3,14 @@ from server.util.consts import STATUS_CODE
 from typing import Iterator
 
 class ResponseHeader(Header):
+    """Container for parsed HTTP response headers."""
+
     def add_header(self, header, value):
         self.headers[header] = value
 
 class ResponseLine:
+    """Represents the status line of an HTTP response."""
+
     def __init__(self, version, status_code):
         self.version = version
         self._status_code = status_code
@@ -40,6 +44,8 @@ class ResponseLine:
         raise TypeError(f"= not supported between instances of '{self.__class__}' and '{type(other)}'")
 
 class Response(Message):
+    """Complete HTTP response object serialized to the client."""
+
     line: ResponseLine 
     header: ResponseHeader
     

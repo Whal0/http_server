@@ -4,6 +4,8 @@ class RequestHeader(Header):
     pass
 
 class RequestLine:
+    """Represents the start line of an HTTP request."""
+
     def __init__(self, method, url, version):
         self.version = version
         self.method = method
@@ -28,6 +30,8 @@ class RequestLine:
         raise TypeError(f"= not supported between instances of '{self.__class__}' and '{type(other)}'")
 
 class Request(Message):
+    """Full HTTP request including line, headers, and optional body."""
+
     line : RequestLine
     header : RequestHeader
     

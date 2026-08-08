@@ -4,6 +4,7 @@ import socket
 from server.parser.request import Request, RequestHeader, RequestLine
 
 class ClientSocket:
+    """Minimal socket client used for end-to-end HTTP request testing."""
     
     def __init__(self, host = "127.0.0.1", port=65432):
         self._socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)

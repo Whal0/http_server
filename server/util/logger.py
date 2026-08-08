@@ -1,3 +1,5 @@
+"""Module that defines logger with custom config"""
+
 import logging
 from server import config
 from datetime import datetime

@@ -1,17 +1,23 @@
+"""
+This module contains ResponseHandler class that handles incoming methods, creates and returns adequate Response class.
+"""
+
 from server.parser.response import Response, ResponseHeader, ResponseLine 
 from server.parser.request import Request
 from server.file_manager import FileManager, File
 from server.util.exceptions import DirectoryAccessForbiddenException, FileNotFoundException
-
 from server.util.logger import logger
 
 class ResponseHandler:
+    """Maps parsed HTTP requests to the appropriate response object."""
 
     def __init__(self, file_manager):
         self.file_manager : FileManager = file_manager
 
     @staticmethod
     def _create_response() -> Response:
+        """Creates base Response with default attributes"""
+         
         return Response(
             ResponseLine(
                 version="HTTP/1.1",
@@ -38,7 +44,7 @@ class ResponseHandler:
         return response
     
     def handle_request(self, request : Request) -> Response:
-
+        
         match request.line.method:
             case "GET":
                 return self._handle_get(request=request)

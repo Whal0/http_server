@@ -44,7 +44,7 @@ def test_get_requests_single_request():
                                header=expected_header,
                                body=expected_body)
 
-    session.get_requests(request)
+    session._get_requests(request)
 
     assert len(session.requests) == 1
     assert session.read_buffer == ""
@@ -72,7 +72,7 @@ def test_get_requests_partial_request():
         version="HTTP/1.1"
     )
 
-    session.get_requests(request)
+    session._get_requests(request)
 
     assert len(session.requests) == 0
     assert session.read_buffer == "Connection : close\r\nAccept : */*\r\n"
@@ -141,7 +141,7 @@ def test_get_requests_multiple_requests():
                                header=expected_header_2,
                                body=expected_body_2)
 
-    session.get_requests(requests)
+    session._get_requests(requests)
 
     assert len(session.requests) == 2
     assert session.read_buffer == ""
@@ -188,7 +188,7 @@ def test_get_requests_no_body():
                                header=expected_header,
                                body=expected_body)
 
-    session.get_requests(request)
+    session._get_requests(request)
 
     assert len(session.requests) == 1
     assert session.read_buffer == ""
@@ -226,7 +226,7 @@ def test_get_requests_no_headers_and_body():
                                header=expected_header,
                                body=expected_body)
 
-    session.get_requests(request)
+    session._get_requests(request)
 
     assert len(session.requests) == 1
     assert session.read_buffer == ""
@@ -282,7 +282,7 @@ def test_get_requests_full_and_partial_request():
         version="HTTP/1.0"
     )
 
-    session.get_requests(requests)
+    session._get_requests(requests)
 
     assert len(session.requests) == 1
     assert session.read_buffer == "Connection : close\r\nAccept : plaintext\r\n"
@@ -328,7 +328,7 @@ def test_get_requests_partial_body():
                                header=expected_header,
                                body=expected_body)
 
-    session.get_requests(request)
+    session._get_requests(request)
 
     assert len(session.requests) == 0
     assert session.read_buffer == "AAA"

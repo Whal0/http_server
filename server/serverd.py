@@ -7,8 +7,8 @@ import socket
 import selectors
 from typing import Iterator
 import logging
-from server.util.logger import logger
 
+from server.util.logger import logger
 from server import config
 from server.session import  HTTPSession, sessions
 from server.response_handler import ResponseHandler
@@ -29,7 +29,7 @@ def _get_client_server_socket_address(sock : socket.socket) -> str:
 
 #TODO: make generator_buffer_queue a simplequeue
 class Connection:
-    """Class takes care of managing connection with peer, it sends/reads bytes and is used to pass them to higher modules"""
+    """Manages a peer socket connection and its read/write buffering."""
     
     def __init__(self, sock : socket.socket):
         self.sock = sock
@@ -132,7 +132,7 @@ class Connection:
         self.send_generator_buffer_queue.append(get_data)
         
 class SelectServer:
-    """Class that manages internal server state and its event loop"""
+    """Runs the server event loop and accepts incoming client connections."""
     
     HOST = "127.0.0.1"
     PORT = 65432
